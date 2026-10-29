@@ -1,0 +1,12 @@
+services:
+  cryptopay:
+    build: .
+    ports:
+      - "18777:18777"
+    env_file: .env
+    volumes:
+      - cryptopay-data:/data
+    restart: unless-stopped
+
+volumes:
+  cryptopay-data:

@@ -1,0 +1,19 @@
+# Monero wallet RPC service, used only when Monero is enabled.
+# Start it with both compose files, never alone:
+#   docker compose -f docker-compose.yml -f docker-compose.monero.yml up -d --build monero-wallet-rpc
+# With both files, this service shares the cryptopay project network,
+# so cryptopay reaches it as http://monero-wallet-rpc:18088/json_rpc.
+# The port is published only on localhost, so host tools (the
+# xmr-node-watch.sh watchdog, curl checks) can reach it, while the
+# public internet cannot. No RPC login: the service is reachable
+# only from this host and from the compose network.
+services:
+  monero-wallet-rpc:
+    build: ./monero-wallet-rpc
+    image: cryptopay-monero-wallet-rpc
+    command: monero-wallet-rpc --wallet-file /wallets/viewonly --password-file /wallets/viewonly.pass --daemon-address ${XMR_DAEMON:-nodes.hashvault.pro:18081} --rpc-bind-ip 0.0.0.0 --rpc-bind-port 18088 --confirm-external-bind --disable-rpc-login --log-file /wallets/wallet-rpc.log --log-level 1
+    volumes:
+      - ./monero-wallets:/wallets
+    ports:
+      - "127.0.0.1:18088:18088"
+    restart: unless-stopped

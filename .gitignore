@@ -1,0 +1,8 @@
+data/
+.env
+cryptopay
+*.tmp
+.monero-setup.env
+monero-wallets/
+monero-cli/
+xmr-node.state
