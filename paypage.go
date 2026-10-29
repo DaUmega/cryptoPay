@@ -68,9 +68,9 @@ func payPageData(cfg *Config, inv *Invoice) payPageView {
 	}
 	return payPageView{
 		ID: inv.ID, Coin: inv.Coin, Address: inv.Address,
-		Amount: fmtAmount(inv.AmountCrypto), URI: uri,
+		Amount: fmtCoinAmount(inv.Coin, inv.AmountCrypto), URI: uri,
 		State:     inv.State,
-		StateText: stateText(inv.State), Received: fmtAmount(inv.Received),
+		StateText: stateText(inv.State), Received: fmtCoinAmount(inv.Coin, inv.Received),
 		Confirmations: maxConf, Required: cfg.required(inv.Coin),
 		ReturnURL: inv.ReturnURL,
 		IDJSON:    jsonString(inv.ID), ReturnJSON: jsonString(inv.ReturnURL),

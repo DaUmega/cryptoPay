@@ -122,10 +122,14 @@ func validateAddress(coin, addr string) error {
 		}
 		return fmt.Errorf("invalid %s address %q", coin, addr)
 	case "XMR":
-		if addr[0] == '4' && len(addr) == 95 && isBase58(addr) {
+		// Primary addresses start with 4, subaddresses with 8; both are
+		// 95 chars. The pool uses subaddresses (the view-only wallet
+		// tracks every subaddress of its account automatically), so
+		// rejecting 8... would reject every real pool subaddress.
+		if (addr[0] == '4' || addr[0] == '8') && len(addr) == 95 && isBase58(addr) {
 			return nil
 		}
-		return fmt.Errorf("invalid XMR address %q (want a 95-char subaddress starting with 4)", addr)
+		return fmt.Errorf("invalid XMR address %q (want a 95-char address starting with 4 or 8)", addr)
 	}
 	return fmt.Errorf("unknown coin %q", coin)
 }

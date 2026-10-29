@@ -26,7 +26,7 @@ func TestValidateAddress(t *testing.T) {
 		"SOL":   {testSOLAddr},
 		"USDC":  {testSOLAddr},
 		"USDT":  {testSOLAddr},
-		"XMR":   {"4" + strings.Repeat("A", 94)},
+		"XMR":   {"4" + strings.Repeat("A", 94), "8" + strings.Repeat("A", 94)},
 	}
 	for coin, addrs := range valid {
 		for _, addr := range addrs {
@@ -48,7 +48,7 @@ func TestValidateAddress(t *testing.T) {
 		"XLM":     {"", "Gshort", "G" + strings.Repeat("8", 55)},
 		"TRX":     {"", "not-an-address", testETHAddr},
 		"SOL":     {"", "short", "SoLaddr with space"},
-		"XMR":     {"", "8" + strings.Repeat("A", 94), "4" + strings.Repeat("A", 50)},
+		"XMR":     {"", "4" + strings.Repeat("A", 50), "9" + strings.Repeat("A", 94)},
 		"BNB":     {testETHAddr}, // removed coin: must not validate
 		"UNKNOWN": {testBTCAddr},
 	}

@@ -17,6 +17,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -45,6 +46,48 @@ func offsetUnit(coin string) float64 {
 		return 1e-12 // 1 piconero
 	}
 	return 1e-6
+}
+
+// coinDecimals is the number of decimal places a quoted amount for
+// this coin may have, matching its offset unit (1 satoshi = 8,
+// 1 gwei/lamport = 9, 1 lovelace/drop/sun/micro-unit = 6,
+// 1 stroop = 7, 1 piconero = 12). Anything beyond that is binary
+// float noise, not money, and must never reach a customer.
+func coinDecimals(coin string) int {
+	switch coin {
+	case "BTC", "LTC", "DOGE", "BCH", "DASH", "ZEC":
+		return 8
+	case "ETH", "MATIC", "ARB", "OP", "BASE", "AVAX", "SOL":
+		return 9
+	case "ADA", "XRP", "TRX", "USDC", "USDT":
+		return 6
+	case "XLM":
+		return 7
+	case "XMR":
+		return 12
+	}
+	return 6
+}
+
+// roundAmount rounds amount to the coin's decimal places, via integer
+// offset units, so base + offset never carries float noise past the
+// last real unit (e.g. XMR 0.001698000028, not 0.0016980000280000002).
+func roundAmount(coin string, amount float64) float64 {
+	unit := offsetUnit(coin)
+	return math.Round(amount/unit) * unit
+}
+
+// fmtCoinAmount formats amount with at most the coin's decimals,
+// trimming trailing zeros, so clean amounts stay short (0.01, 2)
+// and noisy amounts become clean (0.001698000028).
+func fmtCoinAmount(coin string, amount float64) string {
+	s := strconv.FormatFloat(amount, 'f', coinDecimals(coin), 64)
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimRight(s, ".")
+	if s == "" || s == "-0" {
+		return "0"
+	}
+	return s
 }
 
 func newInvoiceID() string {
@@ -84,6 +127,11 @@ func (a *App) createInvoice(req createInvoiceReq) (*Invoice, error) {
 	if base <= 0 || base > 1e9 || math.IsNaN(base) || math.IsInf(base, 0) {
 		return nil, fmt.Errorf("invalid amount")
 	}
+	// Round the base to the coin's decimals first: a frontend quote
+	// like USD/price, or amountUSD/price, carries float noise past
+	// the last real unit, and adding the offset to it would bake
+	// that noise into the amount the customer sees and must send.
+	base = roundAmount(req.Coin, base)
 	// Random offset, unique among open invoices for this coin.
 	unit := offsetUnit(req.Coin)
 	var quoted, offset float64
@@ -93,7 +141,7 @@ func (a *App) createInvoice(req createInvoiceReq) (*Invoice, error) {
 			return nil, err
 		}
 		offset = float64(n.Int64()+1) * unit
-		quoted = base + offset
+		quoted = roundAmount(req.Coin, base+offset)
 		if !a.amountInUse(req.Coin, quoted) {
 			break
 		}
@@ -267,44 +315,51 @@ func fmtAmount(f float64) string {
 	return strconv.FormatFloat(f, 'f', -1, 64)
 }
 
+// fmtIntAmount formats an integer-unit amount (wei, lovelace) with
+// no decimal point, regardless of float noise in the conversion.
+func fmtIntAmount(f float64) string {
+	return strconv.FormatFloat(math.Round(f), 'f', 0, 64)
+}
+
 // paymentURI is a wallet-friendly URI for the pay page and QR code. Not
 // every coin has a standard URI (XRP, TRX, AVAX return ""), in which case
 // the page shows the address and amount as text, which always works.
 func paymentURI(cfg *Config, inv *Invoice) string {
+	amt := fmtCoinAmount(inv.Coin, inv.AmountCrypto)
 	switch inv.Coin {
 	case "BTC":
-		return "bitcoin:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "bitcoin:" + inv.Address + "?amount=" + amt
 	case "LTC":
-		return "litecoin:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "litecoin:" + inv.Address + "?amount=" + amt
 	case "DOGE":
-		return "dogecoin:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "dogecoin:" + inv.Address + "?amount=" + amt
 	case "BCH":
 		// Pool addresses are stored with the bitcoincash: prefix, which
 		// is also the URI scheme, so the address itself is the URI base.
-		return inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return inv.Address + "?amount=" + amt
 	case "DASH":
-		return "dash:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "dash:" + inv.Address + "?amount=" + amt
 	case "ZEC":
-		return "zcash:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "zcash:" + inv.Address + "?amount=" + amt
 	case "ETH", "MATIC", "ARB", "OP", "BASE":
-		wei := fmtAmount(inv.AmountCrypto * 1e18)
+		wei := fmtIntAmount(inv.AmountCrypto * 1e18)
 		return "ethereum:" + inv.Address + "?value=" + wei
 	case "AVAX":
-		wei := fmtAmount(inv.AmountCrypto * 1e18)
+		wei := fmtIntAmount(inv.AmountCrypto * 1e18)
 		return "ethereum:" + inv.Address + "?value=" + wei
 	case "ADA":
-		lovelace := fmtAmount(inv.AmountCrypto * 1e6)
+		lovelace := fmtIntAmount(inv.AmountCrypto * 1e6)
 		return "cardano:" + inv.Address + "?amount=" + lovelace
 	case "XLM":
-		return "web+stellar:pay?destination=" + inv.Address + "&amount=" + fmtAmount(inv.AmountCrypto)
+		return "web+stellar:pay?destination=" + inv.Address + "&amount=" + amt
 	case "SOL":
-		return "solana:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto) + "&label=cryptopay"
+		return "solana:" + inv.Address + "?amount=" + amt + "&label=cryptopay"
 	case "USDC":
-		return "solana:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto) + "&spl-token=" + cfg.USDCMint + "&label=cryptopay"
+		return "solana:" + inv.Address + "?amount=" + amt + "&spl-token=" + cfg.USDCMint + "&label=cryptopay"
 	case "USDT":
-		return "solana:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto) + "&spl-token=" + cfg.USDTMint + "&label=cryptopay"
+		return "solana:" + inv.Address + "?amount=" + amt + "&spl-token=" + cfg.USDTMint + "&label=cryptopay"
 	case "XMR":
-		return "monero:" + inv.Address + "?amount=" + fmtAmount(inv.AmountCrypto)
+		return "monero:" + inv.Address + "?amount=" + amt
 	}
 	return ""
 }
@@ -328,6 +383,43 @@ type invoiceView struct {
 	ExpiresAt             time.Time `json:"expires_at"`
 	CreatedAt             time.Time `json:"created_at"`
 	WebhookStatus         string    `json:"webhook_status,omitempty"`
+}
+
+// MarshalJSON outputs coin amounts as JSON numbers with at most
+// the coin's decimals, so the API never returns float noise like
+// 0.0016980000280000002. A plain float64 field would reintroduce
+// that noise on marshal, even after roundAmount cleaned the value.
+func (v invoiceView) MarshalJSON() ([]byte, error) {
+	type rawView struct {
+		ID                    string          `json:"id"`
+		Coin                  string          `json:"coin"`
+		Address               string          `json:"address"`
+		AmountCrypto          json.RawMessage `json:"amount_crypto"`
+		AmountUSD             float64         `json:"amount_usd,omitempty"`
+		MerchantRef           string          `json:"merchant_ref,omitempty"`
+		State                 string          `json:"state"`
+		Received              json.RawMessage `json:"received"`
+		ConfirmedReceived     json.RawMessage `json:"confirmed_received"`
+		Confirmations         int             `json:"confirmations"`
+		ConfirmationsRequired int             `json:"confirmations_required"`
+		TxIDs                 []string        `json:"txids"`
+		PaymentURI            string          `json:"payment_uri,omitempty"`
+		PayPath               string          `json:"pay_path"`
+		PayURL                string          `json:"pay_url"`
+		ExpiresAt             time.Time       `json:"expires_at"`
+		CreatedAt             time.Time       `json:"created_at"`
+		WebhookStatus         string          `json:"webhook_status,omitempty"`
+	}
+	return json.Marshal(rawView{
+		ID: v.ID, Coin: v.Coin, Address: v.Address,
+		AmountCrypto:      json.RawMessage(fmtCoinAmount(v.Coin, v.AmountCrypto)),
+		AmountUSD:         v.AmountUSD, MerchantRef: v.MerchantRef, State: v.State,
+		Received:          json.RawMessage(fmtCoinAmount(v.Coin, v.Received)),
+		ConfirmedReceived: json.RawMessage(fmtCoinAmount(v.Coin, v.ConfirmedReceived)),
+		Confirmations: v.Confirmations, ConfirmationsRequired: v.ConfirmationsRequired,
+		TxIDs: v.TxIDs, PaymentURI: v.PaymentURI, PayPath: v.PayPath, PayURL: v.PayURL,
+		ExpiresAt: v.ExpiresAt, CreatedAt: v.CreatedAt, WebhookStatus: v.WebhookStatus,
+	})
 }
 
 func invoiceResponse(cfg *Config, inv *Invoice) invoiceView {

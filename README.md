@@ -581,7 +581,7 @@ flow is removed.
 
 ## What was tested
 
-- `go vet` clean, `gofmt` clean, 49 tests pass (`go test ./...`):
+- `go vet` clean, `gofmt` clean, 50 tests pass (`go test ./...`):
   unit tests (state machine, offset uniqueness, pool add/retire/
   re-add, payment URIs, webhook HMAC, Tron base58, address
   validation for every coin, URL validation, invoice-ID

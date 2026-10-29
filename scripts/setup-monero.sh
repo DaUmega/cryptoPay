@@ -138,7 +138,7 @@ mkdir -p monero-wallets; chmod 700 monero-wallets
 CLI=monero-cli/monero-wallet-cli
 if [ -x "$CLI" ] && "$CLI" --version 2>/dev/null | grep -q "$MONERO_VERSION"; then echo "Reusing existing Monero CLI ($MONERO_VERSION)."; else
   case "$(uname -m)" in
-    x86_64) SUFFIX=x64; HASH=ba2928962c101b609434bf8c1b43ad59ebe96c5525977284ca599d9f02d10;;
+    x86_64) SUFFIX=x64; HASH=ba2928962c101b609434bf8c1b43ad59ebe96c5525977284ca599d8bf0f02d10;;
     aarch64) SUFFIX=armv8; HASH=d20d71e6522b41eb8e549c3425f7f4622c9c9a448fc7147525393fd0a6b59703;;
     armv7l) SUFFIX=armv7; HASH=124883ebd8b3e19fb9000bc051dd9a28958a1a383455af78b539362b0d59094f;;
     *) echo "Unsupported arch for Monero: $(uname -m)"; exit 1;;

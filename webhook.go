@@ -28,6 +28,27 @@ type webhookPayload struct {
 	ConfirmedAt  time.Time `json:"confirmed_at,omitempty"`
 }
 
+// MarshalJSON mirrors invoiceView: coin amounts as JSON numbers with
+// at most the coin's decimals, never float noise.
+func (p webhookPayload) MarshalJSON() ([]byte, error) {
+	type rawPayload struct {
+		InvoiceID    string          `json:"invoice_id"`
+		MerchantRef  string          `json:"merchant_ref,omitempty"`
+		Coin         string          `json:"coin"`
+		Address      string          `json:"address"`
+		AmountCrypto json.RawMessage `json:"amount_crypto"`
+		AmountUSD    float64         `json:"amount_usd,omitempty"`
+		State        string          `json:"state"`
+		TxIDs        []string        `json:"txids"`
+		ConfirmedAt  time.Time       `json:"confirmed_at,omitempty"`
+	}
+	return json.Marshal(rawPayload{
+		InvoiceID: p.InvoiceID, MerchantRef: p.MerchantRef, Coin: p.Coin,
+		Address: p.Address, AmountCrypto: json.RawMessage(fmtCoinAmount(p.Coin, p.AmountCrypto)),
+		AmountUSD: p.AmountUSD, State: p.State, TxIDs: p.TxIDs, ConfirmedAt: p.ConfirmedAt,
+	})
+}
+
 func signWebhook(secret string, body []byte) string {
 	if secret == "" {
 		return ""
