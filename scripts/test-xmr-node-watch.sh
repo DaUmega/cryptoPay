@@ -82,4 +82,18 @@ rc=$(run_watch "127.0.0.1:18901 127.0.0.1:18902")
 kill $PIDS 2>/dev/null; PIDS=""; sleep 1
 # Scenario 6: empty node list -> exit 2.
 rc=$(run_watch ""); [ "$rc" = 2 ] && echo "PASS empty-list" || { echo "FAIL empty-list rc=$rc"; fail=1; }
+# Scenario 7: exactly at the default lag boundary (10 blocks) -> no switch.
+mock 18901 100; mock 18902 110; mock 18988 wallet; sleep 1
+echo "http://127.0.0.1:18901" > "$STATE"; : > "$RECORD"
+rc=$(run_watch "127.0.0.1:18901 127.0.0.1:18902")
+[ "$rc" = 0 ] && [ ! -s "$RECORD" ] && [ "$(cat "$STATE")" = "http://127.0.0.1:18901" ] \
+  && echo "PASS lag-10-no-switch" || { echo "FAIL lag-10 rc=$rc record=$(cat "$RECORD") state=$(cat "$STATE")"; fail=1; }
+kill $PIDS 2>/dev/null; PIDS=""; sleep 1
+# Scenario 8: one past the boundary (11 blocks) -> switch to best.
+mock 18901 100; mock 18902 111; mock 18988 wallet; sleep 1
+echo "http://127.0.0.1:18901" > "$STATE"; : > "$RECORD"
+rc=$(run_watch "127.0.0.1:18901 127.0.0.1:18902")
+[ "$rc" = 0 ] && [ "$(cat "$RECORD")" = "http://127.0.0.1:18902" ] \
+  && echo "PASS lag-11-switch" || { echo "FAIL lag-11 rc=$rc record=$(cat "$RECORD")"; fail=1; }
+kill $PIDS 2>/dev/null; PIDS=""; sleep 1
 exit $fail
