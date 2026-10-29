@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 RUN set -e; \
   case "$TARGETARCH" in \
-    amd64) SUFFIX=x64; HASH=ba2928962c101b609434bf8c1b43ad59ebe96c5525977284ca599d9f02d10;; \
+    amd64) SUFFIX=x64; HASH=ba2928962c101b609434bf8c1b43ad59ebe96c5525977284ca599d8bf0f02d10;; \
     arm64) SUFFIX=armv8; HASH=d20d71e6522b41eb8e549c3425f7f4622c9c9a448fc7147525393fd0a6b59703;; \
     arm) SUFFIX=armv7; HASH=124883ebd8b3e19fb9000bc051dd9a28958a1a383455af78b539362b0d59094f;; \
     *) echo "Unsupported arch for Monero: $TARGETARCH" >&2; exit 1;; \
