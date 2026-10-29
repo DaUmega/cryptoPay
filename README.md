@@ -98,7 +98,7 @@ important ones:
 | `WEBHOOK_SECRET` | (unset) | HMAC secret for webhook signatures. Unset means unsigned webhooks (testing only). |
 | `PRICE_API_URL` | (unset) | Your own cryptoPriceAPI (recommended, see below), in the same shape: GET `<base>/price/<SYMBOL>` returns `{"price_usd": number}`. Only needed for `amount_usd` invoices; leave unset to use the built-in CoinPaprika fallback. |
 | `INVOICE_EXPIRY_MIN` | 60 | Invoice lifetime in minutes. |
-| `POLL_INTERVAL_SEC` | 30 | Watch loop interval. Raise it if you have many open invoices or hit API rate limits. |
+| `POLL_INTERVAL_SEC` | 10 | Watch loop interval, matching the web frontend's 10s poll. Raise it if you have many open invoices or hit API rate limits. |
 | `PUBLIC_URL` | (unset) | Base URL prepended to pay links in API responses. Without it, `pay_url` is a relative path. |
 | `CONF_<COIN>` | BTC 2, LTC 6, ETH 12, MATIC 64, ARB 12, OP 12, BASE 12, AVAX 12, DOGE 6, BCH 6, DASH 6, ZEC 12, ADA 15, XRP 1, XLM 1, TRX 20, SOL 32, USDC 32, USDT 32, XMR 10 | Required confirmations per coin. |
 

@@ -170,7 +170,7 @@ say "Step 8: Writing .env (permissions 600, never committed; .gitignore already 
   echo "API_TOKEN=$API_TOKEN"; echo "WEBHOOK_SECRET=$WEBHOOK_SECRET"; echo "PORT=$PORT"; echo "BIND=0.0.0.0"; echo "DATA_DIR=/data"
   echo "PUBLIC_URL=$PUBLIC_URL"; echo "PRICE_API_URL=$PRICE_API_URL"
   echo "XMR_WALLET_RPC_URL=$XMR_RPC_URL"; echo "XMR_WALLET_RPC_USER=$XMR_USER"; echo "XMR_WALLET_RPC_PASS=$XMR_PASS"
-  echo "INVOICE_EXPIRY_MIN=60"; echo "POLL_INTERVAL_SEC=30"
+  echo "INVOICE_EXPIRY_MIN=60"; echo "POLL_INTERVAL_SEC=10"
 } > .env; chmod 600 .env
 echo "Wrote .env."
 # The Monero watchdog cron, if any, was already offered by

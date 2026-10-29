@@ -108,7 +108,7 @@ func loadConfig() *Config {
 		PriceAPIURL:   os.Getenv("PRICE_API_URL"),
 		PriceBaseURL:  env("PRICE_API_BASE_URL", "https://api.coinpaprika.com"),
 		ExpiryMin:     envInt("INVOICE_EXPIRY_MIN", 60),
-		PollSec:       envInt("POLL_INTERVAL_SEC", 30),
+		PollSec:       envInt("POLL_INTERVAL_SEC", 10),
 		PublicURL:     strings.TrimSuffix(os.Getenv("PUBLIC_URL"), "/"),
 		BTCExplorer:   env("BTC_ESPLORA_URL", "https://blockstream.info/api"),
 		LTCExplorer:   env("LTC_ESPLORA_URL", "https://litecoinspace.org/api"),
@@ -322,7 +322,7 @@ func (a *App) routes() http.Handler {
 func main() {
 	cfg := loadConfig()
 	if cfg.PollSec <= 0 {
-		cfg.PollSec = 30
+		cfg.PollSec = 10
 	}
 	if cfg.ExpiryMin <= 0 {
 		cfg.ExpiryMin = 60

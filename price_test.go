@@ -108,6 +108,15 @@ func TestDefaultPort(t *testing.T) {
 	}
 }
 
+func TestDefaultPollInterval(t *testing.T) {
+	t.Setenv("API_TOKEN", "test-token-for-poll-check")
+	t.Setenv("POLL_INTERVAL_SEC", "")
+	cfg := loadConfig()
+	if cfg.PollSec != 10 {
+		t.Fatalf("default POLL_INTERVAL_SEC = %d, want 10 (matching the web frontend's 10s poll)", cfg.PollSec)
+	}
+}
+
 func TestCreateInvoiceValidation(t *testing.T) {
 	app := testApp(t)
 	if _, _, err := app.store.addToPool("BTC", []string{testBTCAddr}); err != nil {
