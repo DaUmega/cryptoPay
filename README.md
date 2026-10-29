@@ -80,7 +80,9 @@ API_TOKEN=... PORT=18777 DATA_DIR=./data ./cryptopay
 The service has no TLS. Run it on localhost or a private network, or
 put it behind a reverse proxy (Caddy, nginx) for TLS, the same way a
 local price API would be run. The compose file maps
-`127.0.0.1:18777:18777` by default, so it is localhost only. If your
+`127.0.0.1:18777:18777` by default, so it is localhost only. It also
+includes a `host.docker.internal` mapping, so a price API running on
+the host is reachable from inside the container. If your
 shop runs on a different machine, change that line to `18777:18777`
 and put it behind a firewall or reverse proxy first. Do not expose it to the internet bare:
 invoice creation and pool admin need the API token, but the pay page
