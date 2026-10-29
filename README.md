@@ -79,7 +79,10 @@ API_TOKEN=... PORT=18777 DATA_DIR=./data ./cryptopay
 
 The service has no TLS. Run it on localhost or a private network, or
 put it behind a reverse proxy (Caddy, nginx) for TLS, the same way a
-local price API would be run. Do not expose it to the internet bare:
+local price API would be run. The compose file maps
+`127.0.0.1:18777:18777` by default, so it is localhost only. If your
+shop runs on a different machine, change that line to `18777:18777`
+and put it behind a firewall or reverse proxy first. Do not expose it to the internet bare:
 invoice creation and pool admin need the API token, but the pay page
 and invoice status are public by design (by unguessable UUID).
 
@@ -118,18 +121,19 @@ service no longer depends on.
 cryptopay does not fetch prices from exchanges itself. It has two
 keyless price sources, in order:
 
-1. **Your own cryptoPriceAPI (recommended).** That service (in
-   `~/Downloads/cryptoPriceAPI` on the same machine) aggregates
-   live tickers from Binance, Kraken, Coinbase, Bybit, OKX, and
-   KuCoin over public websockets, no keys, and returns one VWAP
-   price with outlier filtering at `GET /price/<SYMBOL>`, which is
-   exactly the shape cryptopay's `PRICE_API_URL` expects
+1. **Your own cryptoPriceAPI (recommended).** That service
+   ([cryptoPriceAPI](https://github.com/DaUmega/cryptoPriceAPI))
+   aggregates live tickers from Binance, Kraken, Coinbase, Bybit,
+   OKX, and KuCoin over public websockets, no keys, and returns
+   one VWAP price with outlier filtering at `GET /price/<SYMBOL>`,
+   which is exactly the shape cryptopay's `PRICE_API_URL` expects
    (`{"price_usd": number}`). Run it on its own port, because it
    also defaults to 8080, and that port is already taken on many
    hosts:
 
    ```bash
-   cd ~/Downloads/cryptoPriceAPI
+   git clone https://github.com/DaUmega/cryptoPriceAPI
+   cd cryptoPriceAPI
    CRYPTOAPI_PORT=19080 ./manage.sh start
    curl http://127.0.0.1:19080/health
    ```
